@@ -48,4 +48,4 @@ jobs:
           docker pull --disable-content-trust=true ${{ env.DOCKER_REGISTRY }}/monitor-app:${{ github.sha }}
           docker stop monitor-app || true
           docker rm monitor-app || true
-          docker run --rm -it -p 5000:5000 --name monitor-app ${{ env.DOCKER_REGISTRY }}/monitor-app:${{ github.sha }}
+          docker run -d -p 5000:5000 --name monitor-app ${{ env.DOCKER_REGISTRY }}/monitor-app:${{ github.sha }}
