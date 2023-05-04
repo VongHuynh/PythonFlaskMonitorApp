@@ -26,7 +26,7 @@ jobs:
       run: docker build -t monitor-app:${{ github.sha }} .
 
     - name: Tag Docker image with git sha
-      run: docker tag monitor-app:${{ github.sha }} ${{ env.DOCKER_REGISTRY }} / monitor-app:${{ github.sha }}
+      run: docker tag monitor-app:${{ github.sha }} ${{ env.DOCKER_REGISTRY }}/monitor-app:${{ github.sha }}
 
     - name: Push Docker image
-      run: docker push ${{ env.DOCKER_REGISTRY }} / monitor-app:${{ github.sha }}
+      run: docker push ${{ env.DOCKER_REGISTRY }}/monitor-app:${{ github.sha }}
