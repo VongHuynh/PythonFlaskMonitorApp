@@ -1,21 +1,30 @@
+# This file is a template, and might need editing before it works on your project.
+# This is a sample GitLab CI/CD configuration file that should run without any modifications.
+# It demonstrates a basic 3 stage CI/CD pipeline. Instead of real tests or scripts,
+# it uses echo commands to simulate the pipeline execution.
+#
+# A pipeline is composed of independent jobs that run scripts, grouped into stages.
+# Stages run in sequential order, but jobs within stages run in parallel.
+#
+# For more information, see: https://docs.gitlab.com/ee/ci/yaml/index.html#stages
+#
+# You can copy and paste this template into a new `.gitlab-ci.yml` file.
+# You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
+#
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# https://docs.gitlab.com/ee/development/cicd/templates.html
+# This specific template is located at:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
 variables:
   IMAGE_NAME: registry.lerndevops.click/demo-gitlab-cicd-app
-  IMAGE_TAG: python-app-1.0
+  REGISTRY_NAME: registry.lerndevops.click
 
-stages:
-  - test
+stages:          # List of stages for jobs, and their order of execution
   - build
+  - test
   - deploy
 
-run_tests:
-  stage: test
-  image: python:3.9-slim-buster
-  before_script:
-    - apt-get update && apt-get install make
-  script:
-    - make test
-
-.build:
+build-job:       # This job runs in the build stage, which runs first.
   stage: build
   image: docker:20.10.16
   services:
@@ -23,20 +32,29 @@ run_tests:
   variables:
     DOCKER_TLS_CERTDIR: "/certs"
   before_script:
-    - docker login registry.lerndevops.click -u $REGISTRY_USER -p $REGISTRY_PASS
+    - docker login -u $REGISTRY_USER -p $REGISTRY_PASS $REGISTRY_NAME
   script:
-    - docker build -t $IMAGE_NAME:v1.0.0-$CI_COMMIT_SHA .
-    - docker push $IMAGE_NAME:v1.0.0-$CI_COMMIT_SHA
-
-build-dev:
-  extends: .build
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA .
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
   only:
     - main
-deploy:
-  stage: deploy
+
+unit-test-job:   # This job runs in the test stage.
+  stage: test    # It only starts when the job in the build stage completes successfully.
+  script:
+    - echo "Running unit tests... This will take about 60 seconds."
+    - echo "Code coverage is 95%"
+
+
+deploy-job:      # This job runs in the deploy stage.
+  stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
+  environment: production
   before_script:
     - chmod 400 $SSH_KEY
   script:
     - ssh -o StrictHostKeyChecking=no -i $SSH_KEY root@$IP_SERVER "
-        docker login registry.lerndevops.click -u $REGISTRY_USER -p $REGISTRY_PASS &&
-        docker run -d -p 5000:5000 $IMAGE_NAME:$CI_COMMIT_SHA"
+        docker login -u $REGISTRY_USER -p $REGISTRY_PASS $REGISTRY_NAME &&
+        docker pull $IMAGE_NAME:$CI_COMMIT_SHA &&
+        docker stop monitor-app | true &&
+        docker rm monitor-app | true &&
+        docker run -d -p 6000:5000 --name monitor-app $IMAGE_NAME:$CI_COMMIT_SHA"
