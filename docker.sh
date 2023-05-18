@@ -8,6 +8,6 @@ do
   sleep 2
 done
 
-docker run --rm -it -p 5000:5000 --name monitoring monitoring
+docker run --rm -it -p 5000:5000 --name monitoring monitoring-app
 
 echo "Run sucess"
